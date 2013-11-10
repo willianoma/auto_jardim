@@ -1,106 +1,71 @@
 #include <LiquidCrystal.h>
-#include <MeetAndroid.h>
+#include <Servo.h>
+ 
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+Servo motor;
 
-  LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
-  MeetAndroid meetAndroid;
-  
-  int pinX = A0;
-  int pinY = A1;
+int intervaloInicio = 10;//segundos
+int intervaloFim = 5;//segundos
 
-  int x = 0;
-  int y = 0;
-   
 void setup() {
   lcd.begin(16, 2);
+  motor.attach(10);
   Serial.begin(9600);
-  
-  meetAndroid.registerFunction(getMsgAndroid, 'G'); // a string
-  meetAndroid.registerFunction(recebeScore, 'S'); // a string
-  meetAndroid.registerFunction(recebeTime, 'T'); // a string
-  
 }
 
 void loop() {
+  msgAlerta("Mudou de ciclo");
+  //inicioLCD();
+  tempoInicio(intervaloInicio*1000); 
+  motor.write(180);
+  msgAlerta("Mudou de ciclo");
+  fimLCD();
+  tempoFim(intervaloFim*1000); 
+  motor.write(90);
 
-  Principal(); 
-  meetAndroid.receive();
-  mandarXY();
-  delay(10);
   
 } //Fim do loop
+void inicioLCD(){
+//lcd.clear();  
+lcd.setCursor(0,0);
+lcd.print("Tempo p/ Inicio");
+}
 
-  void mandarXY(){
-    x = analogRead(pinX);
-    y = analogRead(pinY);
+void fimLCD(){
+lcd.clear(); 
+lcd.setCursor(0,0);
+lcd.print("Tempo p/ Fim");
+}
 
-  char buffer[15];
-  sprintf(buffer,"%d,%d",x,y);
-  meetAndroid.send(buffer);
 
-  }//fim mandarXY
+void tempoInicio(int tempo){
+      tempo=tempo/1000;
+      for (int i=0; i<=(tempo); i++){
+      lcd.setCursor(0,1);
+      lcd.print((tempo)-i); 
+      inicioLCD();
+      delay(1000);
+      lcd.clear();  
+  }
+}
 
-  void getMsgAndroid(byte flag, byte numOfValues)
-  {
-    int length = meetAndroid.stringLength();
-    char data[length];
-    meetAndroid.getString(data);
-    String messagem = "";  
-  
-    for (int i=0; i<length-1; i++){
-        messagem+=data[i];     
+void tempoFim(int tempo){
+      for (int i=0; i<=(tempo/1000); i++){
+      lcd.setCursor(0,1);
+      lcd.print((tempo/1000)-i); 
+      delay(1000);
     }
-    msgAlerta(messagem);
-  }//fim getMsgAndroid
+}
 
-  void recebeScore(byte flag, byte numOfValues){
-  int score = meetAndroid.getInt();
-  setScore(score);
-  }//fim receveScore
+void ligarAgua(){
+  motor.write(90); 
+}
 
-  void recebeTime(byte flag, byte numOfValues){
-  int time = meetAndroid.getInt();
-  setTimer(time);
-  }//fim recebeTime
+void desligarAgua(){
+  motor.write(180);
+}
 
-  void Principal(){
-  lcd.setCursor(1,0);
-  lcd.print("Score");
-  lcd.setCursor(10,0);
-  lcd.print("Timer");          
-  } //Fim Principal
- 
-  void setScore(int scoreAndroid){
-     String score = String(scoreAndroid);
-     lcd.setCursor(1,1);
-     int tamanho = score.length();
-     
-     String texto = "";     
-     while (tamanho < 5 ){
-       texto+=" ";
-       tamanho++;
-     }       
-   
-    texto+=score;           
-    lcd.print(texto);
-       
-  } //Fim setScore
-  
-  void setTimer(int timerAndroid){
-    int Timer = timerAndroid;
-  if(Timer<10){
-    lcd.setCursor(11,1);
-    lcd.print(0);
-    lcd.setCursor(12,1);
-    lcd.print(Timer); 
-    }else{
-      lcd.setCursor(11,1);
-      lcd.print(Timer);
-      }
-  
-  lcd.setCursor(13,1);
-  lcd.print("s");
-  }// Fim setTime
-  
+
   void transicao(){  
    for (int i=0; i<=16; i++){
         for (int j=0; j<=1;j++){
@@ -115,21 +80,19 @@ void loop() {
   } //fim transicao
   
   
-  void msgAlerta(String msgAndroid){
+  void msgAlerta(String msg){
     lcd.clear();
-    int tamanho = msgAndroid.length();
+    int tamanho = msg.length();
     String texto = "";
     int spaco = (16-tamanho)/2;
     
     for (int i=0; i<spaco;i++){
     texto += " ";
-      
-    Serial.println(spaco);
-    }
-    
-    efeitoDuasLinhas(texto+=msgAndroid);
+        
+    efeitoDuasLinhas(texto+=msg);
     delay(200);
     lcd.clear();
+    }
    } //fim msgAlenta
  
   void efeitoDuasLinhas(String valor){
